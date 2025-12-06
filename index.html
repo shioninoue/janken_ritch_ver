@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>じゃんけんBOSSバトル。</title>
+    <style>
+      :root {
+        --bg: #0b1220;
+        --card: #121a2a;
+        --text: #e7ecf5;
+        --muted: #9aa7bf;
+        --win: #2ecc71;
+        --lose: #e74c3c;
+        --bar: #24314a;
+        --accent: #5b8cff;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(180deg, #0b1220, #0b1220 40%, #0f1630);
+        color: var(--text);
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+          Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 24px;
+      }
+      .wrap {
+        width: min(900px, 95vw);
+      }
+      .card {
+        background: var(--card);
+        border-radius: 18px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        padding: 20px 20px 16px;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+        letter-spacing: 0.02em;
+      }
+      .sub {
+        margin: 0 0 16px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .arena {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin: 10px 0 14px;
+      }
+      .panel {
+        background: #0e1626;
+        border: 1px solid #1e2a44;
+        border-radius: 14px;
+        padding: 14px;
+      }
+      .name {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+      }
+      .hpbar {
+        height: 14px;
+        background: var(--bar);
+        border-radius: 999px;
+        overflow: hidden;
+        position: relative;
+      }
+      .hp {
+        height: 100%;
+        background: linear-gradient(90deg, #45d, #7af);
+        width: 100%;
+        transition: width 0.25s ease;
+      }
+      .hp.enemy {
+        background: linear-gradient(90deg, #d54, #f77);
+      }
+      .stat {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .vs {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .badge {
+        background: #1b2540;
+        border: 1px solid #2a3a64;
+        color: #cfe0ff;
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+      .choices {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin: 14px 0 8px;
+      }
+      button.choice {
+        flex: 1;
+        max-width: 180px;
+        background: #182446;
+        border: 1px solid #29407b;
+        color: #dbe6ff;
+        padding: 12px 14px;
+        border-radius: 12px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: transform 0.06s ease, background 0.2s;
+      }
+      button.choice:hover {
+        transform: translateY(-1px);
+        background: #1b2a53;
+      }
+      .log {
+        background: #0f1729;
+        border: 1px solid #1e2a44;
+        border-radius: 12px;
+        padding: 12px;
+        height: 160px;
+        overflow: auto;
+        font-size: 13px;
+      }
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 6px;
+      }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .dot.win {
+        background: var(--win);
+      }
+      .dot.lose {
+        background: var(--lose);
+      }
+      .dot.draw {
+        background: #7f8fa6;
+      }
+      .score {
+        display: flex;
+        gap: 10px;
+        color: var(--muted);
+        font-size: 12px;
+        margin: 8px 2px 0;
+      }
+      .footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 10px;
+      }
+      .reset {
+        background: #16233f;
+        border: 1px solid #2a3a64;
+        color: #cfe0ff;
+        border-radius: 10px;
+        padding: 10px 12px;
+        cursor: pointer;
+      }
+      .toast {
+        font-size: 13px;
+        color: #cfe0ff;
+      }
+      .big {
+        font-weight: 700;
+        color: #fff;
+      }
+      .end {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+      .end .box {
+        background: #0f1729;
+        border: 1px solid #243357;
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+      }
+      .title {
+        font-size: 22px;
+        margin-bottom: 6px;
+      }
+      .desc {
+        color: var(--muted);
+        margin-bottom: 14px;
+      }
+      .again {
+        background: var(--accent);
+        border: none;
+        color: #fff;
+        font-weight: 600;
+        border-radius: 12px;
+        padding: 12px 16px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="card">
+        <h1>じゃんけんBOSSバトル</h1>
+        <p class="sub">勝てばダメージ！3連勝でクリティカル。</p>
+
+        <div class="arena">
+          <div class="panel">
+            <div class="name">
+              <strong>YOU</strong
+              ><span class="stat"><span id="streak">連勝: 0</span></span>
+            </div>
+            <div class="hpbar">
+              <div id="hpYou" class="hp" style="width: 100%"></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="name">
+              <strong>BOSS</strong
+              ><span class="stat" id="bossState">待機中…</span>
+            </div>
+            <div class="hpbar">
+              <div id="hpBoss" class="hp enemy" style="width: 100%"></div>
+            </div>
+          </div>
+          <div class="vs"><span class="badge" id="lastRound">READY?</span></div>
+          <div class="vs">
+            <div class="choices">
+              <button class="choice" data-hand="0">✊ グー</button>
+              <button class="choice" data-hand="1">✌️ チョキ</button>
+              <button class="choice" data-hand="2">🖐️ パー</button>
+            </div>
+          </div>
+          <div class="panel" style="grid-column: 1/-1">
+            <div class="log" id="log"></div>
+            <div class="score">
+              <span id="scoreWL">W:0 / L:0 / D:0</span
+              ><span id="scoreDmg">与:0 / 被:0</span>
+            </div>
+            <div class="footer">
+              <button class="reset" id="btnReset">リセット</button>
+              <div class="toast" id="toast">勝つと敵HPへダメージ！</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="end" id="end">
+      <div class="box">
+        <div class="title" id="endTitle">決着！</div>
+        <div class="desc" id="endDesc">また挑戦してね。</div>
+        <button class="again" id="again">もう一度</button>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const HANDS = ["グー", "チョキ", "パー"]; // 0,1,2
+        const hpYouEl = document.getElementById("hpYou");
+        const hpBossEl = document.getElementById("hpBoss");
+        const bossState = document.getElementById("bossState");
+        const lastRound = document.getElementById("lastRound");
+        const logEl = document.getElementById("log");
+        const streakEl = document.getElementById("streak");
+        const scoreWLD = document.getElementById("scoreWL");
+        const scoreDmg = document.getElementById("scoreDmg");
+        const toast = document.getElementById("toast");
+        const endLayer = document.getElementById("end");
+        const endTitle = document.getElementById("endTitle");
+        const endDesc = document.getElementById("endDesc");
+        const againBtn = document.getElementById("again");
+        const resetBtn = document.getElementById("btnReset");
+
+        let hpYouMax = 100,
+          hpBossMax = 120;
+        let hpYou = hpYouMax,
+          hpBoss = hpBossMax;
+        let streak = 0,
+          wins = 0,
+          loses = 0,
+          draws = 0,
+          dealt = 0,
+          taken = 0;
+        const rnd = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+
+        function result(me, cpu) {
+          // 0:draw, 1:win, -1:lose
+          if (me === cpu) return 0;
+          // (me - cpu + 3) % 3 === 1 なら勝ち
+          return (me - cpu + 3) % 3 === 1 ? 1 : -1;
+        }
+
+        function setHP(el, val, max) {
+          const pct = Math.max(0, Math.min(100, Math.round((val / max) * 100)));
+          el.style.width = pct + "%";
+        }
+
+        function pushLog(kind, text) {
+          const row = document.createElement("div");
+          row.className = "row";
+          const dot = document.createElement("span");
+          dot.className =
+            "dot " +
+            (kind === "win" ? "win" : kind === "lose" ? "lose" : "draw");
+          const msg = document.createElement("span");
+          msg.textContent = text;
+          row.append(dot, msg);
+          logEl.prepend(row);
+        }
+
+        function updateHUD() {
+          setHP(hpYouEl, hpYou, hpYouMax);
+          setHP(hpBossEl, hpBoss, hpBossMax);
+          streakEl.textContent = `連勝: ${streak}`;
+          scoreWLD.textContent = `W:${wins} / L:${loses} / D:${draws}`;
+          scoreDmg.textContent = `与:${dealt} / 被:${taken}`;
+        }
+
+        function endGame(win) {
+          endTitle.textContent = win ? "勝利！" : "敗北…";
+          endDesc.textContent = win
+            ? `BOSSを倒した！与ダメ ${dealt} / 被ダメ ${taken}｜連勝 ${streak}`
+            : `あなたは倒れてしまった… 与ダメ ${dealt} / 被ダメ ${taken}`;
+          endLayer.style.display = "flex";
+        }
+
+        function cpuPick() {
+          // ほんの少しだけプレイヤーの連勝に対抗（学習っぽさ）
+          // 連勝が高いと、プレイヤーが出しがちな手(直近勝ち手)を1/3で避ける
+          if (
+            lastCPUHandHistory.length &&
+            streak >= 2 &&
+            Math.random() < 0.33
+          ) {
+            // 前回プレイヤーが勝った手をたぶん読んでくる
+            const predict = lastPlayerHandHistory.at(-1);
+            // それに勝てる手を出す
+            return (predict + 1) % 3;
+          }
+          return rnd(0, 2);
+        }
+
+        let lastPlayerHandHistory = [],
+          lastCPUHandHistory = [];
+        function play(me) {
+          const cpu = cpuPick();
+          lastCPUHandHistory.push(cpu);
+          lastPlayerHandHistory.push(me);
+          bossState.textContent = `CPU: ${HANDS[cpu]}`;
+          const r = result(me, cpu);
+
+          if (r === 1) {
+            // 勝ち：与ダメージは12-18＋(3連勝ごとに+8)
+            streak++;
+            const bonus = streak > 0 && streak % 3 === 0 ? 8 : 0;
+            let dmg = rnd(12, 18) + bonus;
+            hpBoss -= dmg;
+            dealt += dmg;
+            wins++;
+            lastRound.textContent = `WIN! ${HANDS[me]} vs ${HANDS[cpu]} ｜${dmg} ダメージ`;
+            lastRound.style.color = "#8ef3b0";
+            toast.textContent =
+              bonus > 0 ? "クリティカル！3連勝ボーナス！" : "ナイス！";
+            pushLog(
+              "win",
+              `あなた:${HANDS[me]} / CPU:${HANDS[cpu]} → BOSSに${dmg}ダメージ`
+            );
+          } else if (r === -1) {
+            // 負け：被ダメージは10-14
+            const dmg = rnd(10, 14);
+            streak = 0;
+            hpYou -= dmg;
+            taken += dmg;
+            loses++;
+            lastRound.textContent = `LOSE… ${HANDS[me]} vs ${HANDS[cpu]} ｜${dmg} 被ダメ`;
+            lastRound.style.color = "#ff8a8a";
+            toast.textContent = "体勢を立て直せ！";
+            pushLog(
+              "lose",
+              `あなた:${HANDS[me]} / CPU:${HANDS[cpu]} → あなたに${dmg}ダメージ`
+            );
+          } else {
+            // あいこ：少ダメージ（どちらにも5）
+            const dmg = 5;
+            hpBoss -= dmg;
+            hpYou -= dmg;
+            dealt += dmg;
+            taken += dmg;
+            draws++;
+            lastRound.textContent = `DRAW ${HANDS[me]} vs ${HANDS[cpu]} ｜双方に${dmg}`;
+            lastRound.style.color = "#cbd5e1";
+            toast.textContent = "様子を伺っている…";
+            pushLog("draw", `あいこ：双方に${dmg}ダメージ`);
+          }
+
+          updateHUD();
+
+          if (hpBoss <= 0) {
+            hpBoss = 0;
+            updateHUD();
+            endGame(true);
+          } else if (hpYou <= 0) {
+            hpYou = 0;
+            updateHUD();
+            endGame(false);
+          }
+        }
+
+        function reset(all = true) {
+          hpYou = hpYouMax;
+          hpBoss = hpBossMax;
+          streak = 0;
+          wins = loses = draws = 0;
+          dealt = taken = 0;
+          lastPlayerHandHistory = [];
+          lastCPUHandHistory = [];
+          bossState.textContent = "待機中…";
+          lastRound.textContent = "READY?";
+          lastRound.style.color = "#cfe0ff";
+          logEl.innerHTML = "";
+          updateHUD();
+          endLayer.style.display = "none";
+          if (all) toast.textContent = "勝つと敵HPへダメージ！";
+        }
+
+        document.querySelectorAll("button.choice").forEach((btn) => {
+          btn.addEventListener("click", (e) => {
+            const me = Number(e.currentTarget.dataset.hand);
+            play(me);
+          });
+        });
+        resetBtn.addEventListener("click", () => reset());
+        againBtn.addEventListener("click", () => reset());
+
+        updateHUD();
+      })();
+    </script>
+  </body>
+</html>
